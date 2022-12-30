@@ -18,18 +18,18 @@ package fs2
 package netty
 package benchmarks.echo
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ ExitCode, IO, IOApp }
 import cats.syntax.all._
 
-import com.comcast.ip4s.{Host, Port}
+import com.comcast.ip4s.{ Host, Port }
 
 object Fs2Netty extends IOApp {
   def run(args: List[String]): IO[ExitCode] = {
     val host = Host.fromString(args(0))
     val port = Port.fromInt(args(1).toInt).get
 
-    val rsrc = Network[IO] flatMap { net =>
-      val handlers = net.server(host, port) map { client =>
+    val rsrc = Network[IO].flatMap { net =>
+      val handlers = net.server(host, port).map { client =>
         client.reads.through(client.writes).attempt.void
       }
 

@@ -17,13 +17,13 @@
 package fs2.netty
 
 import io.netty.buffer.ByteBufAllocator
-import io.netty.channel.{ChannelOption => JChannelOption, MessageSizeEstimator, RecvByteBufAllocator, WriteBufferWaterMark}
+import io.netty.channel.{ ChannelOption => JChannelOption, MessageSizeEstimator, RecvByteBufAllocator, WriteBufferWaterMark }
 
-import java.lang.{Boolean => JBoolean}
+import java.lang.{ Boolean => JBoolean }
 
 sealed trait ChannelOption {
   type Value
-  val key: JChannelOption[Value]
+  val key:   JChannelOption[Value]
   val value: Value
 }
 
@@ -32,7 +32,7 @@ object ChannelOption {
   def apply[A](key0: JChannelOption[A], value0: A): ChannelOption =
     new ChannelOption {
       type Value = A
-      val key = key0
+      val key   = key0
       val value = value0
     }
 

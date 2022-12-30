@@ -17,21 +17,22 @@
 package fs2
 package netty
 
-import cats.{Applicative, Functor}
-import cats.effect.{Async, Poll, Sync}
-import cats.effect.std.{Dispatcher, Queue}
+import cats.{ Applicative, Functor }
+import cats.effect.{ Async, Poll, Sync }
+import cats.effect.std.{ Dispatcher, Queue }
 import cats.syntax.all._
 
-import com.comcast.ip4s.{IpAddress, SocketAddress}
+import com.comcast.ip4s.{ IpAddress, SocketAddress }
 
-import io.netty.buffer.{ByteBuf, Unpooled}
-import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import io.netty.buffer.{ ByteBuf, Unpooled }
+import io.netty.channel.{ ChannelHandlerContext, ChannelInboundHandlerAdapter }
 import io.netty.channel.socket.SocketChannel
 
-private final class SocketHandler[F[_]: Async] (
-    disp: Dispatcher[F],
+private final class SocketHandler[F[_]: Async](
+    disp:    Dispatcher[F],
     channel: SocketChannel,
-    bufs: Queue[F, AnyRef])     // ByteBuf | Throwable | Null
+    bufs:    Queue[F, AnyRef],
+) // ByteBuf | Throwable | Null
     extends ChannelInboundHandlerAdapter
     with Socket[F] {
 
@@ -42,10 +43,10 @@ private final class SocketHandler[F[_]: Async] (
     Sync[F].delay(SocketAddress.fromInetSocketAddress(channel.remoteAddress()))
 
   private[this] def take(poll: Poll[F]): F[ByteBuf] =
-    poll(bufs.take) flatMap {
-      case null => Applicative[F].pure(null)   // EOF marker
-      case buf: ByteBuf => buf.pure[F]
-      case t: Throwable => t.raiseError[F, ByteBuf]
+    poll(bufs.take).flatMap {
+      case null => Applicative[F].pure(null) // EOF marker
+      case buf: ByteBuf   => buf.pure[F]
+      case t:   Throwable => t.raiseError[F, ByteBuf]
     }
 
   private[this] val fetch: Stream[F, ByteBuf] =
@@ -57,14 +58,17 @@ private final class SocketHandler[F[_]: Async] (
     }
 
   lazy val reads: Stream[F, Byte] =
-    Stream force {
+    Stream.force {
       Functor[F].ifF(isOpen)(
         fetch.flatMap(b => if (b == null) Stream.empty else Stream.chunk(toChunk(b))) ++ reads,
-        Stream.empty)
+        Stream.empty,
+      )
     }
 
   def write(bytes: Chunk[Byte]): F[Unit] =
-    fromNettyFuture[F](Sync[F].delay(channel.writeAndFlush(toByteBuf(bytes)))).void
+    fromNettyFuture[F](
+      Sync[F].delay(channel.writeAndFlush(toByteBuf(bytes))),
+    ).void
 
   val writes: Pipe[F, Byte, INothing] =
     _.chunks.evalMap(c => write(c) *> isOpen).takeWhile(b => b).drain
@@ -82,7 +86,8 @@ private final class SocketHandler[F[_]: Async] (
     try {
       disp.unsafeRunAndForget(bufs.offer(null))
     } catch {
-      case _: IllegalStateException => ()   // sometimes we can see this due to race conditions in shutdown
+      case _: IllegalStateException =>
+        () // sometimes we can see this due to race conditions in shutdown
     }
 
   private[this] def toByteBuf(chunk: Chunk[Byte]): ByteBuf =
@@ -107,8 +112,11 @@ private final class SocketHandler[F[_]: Async] (
 }
 
 private object SocketHandler {
-  def apply[F[_]: Async](disp: Dispatcher[F], channel: SocketChannel): F[SocketHandler[F]] =
-    Queue.unbounded[F, AnyRef] map { bufs =>
+  def apply[F[_]: Async](
+      disp:    Dispatcher[F],
+      channel: SocketChannel,
+  ): F[SocketHandler[F]] =
+    Queue.unbounded[F, AnyRef].map { bufs =>
       new SocketHandler(disp, channel, bufs)
     }
 }

@@ -17,5 +17,6 @@
 package fs2
 
 package object netty {
-  private[netty] def fromNettyFuture[F[_]]: PartiallyApplied[F] = new PartiallyApplied[F]
+  private[netty] def fromNettyFuture[F[_]]: PartiallyApplied[F] =
+    new PartiallyApplied[F]
 }

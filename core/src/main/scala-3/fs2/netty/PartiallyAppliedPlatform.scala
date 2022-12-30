@@ -16,5 +16,4 @@
 
 package fs2.netty
 
-private class PartiallyAppliedPlatform[F[_]] { this: PartiallyApplied[F] =>
-}
+private class PartiallyAppliedPlatform[F[_]] { this: PartiallyApplied[F] => }

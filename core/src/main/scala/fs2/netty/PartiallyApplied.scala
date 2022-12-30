@@ -16,7 +16,7 @@
 
 package fs2.netty
 
-import cats.effect.{Async, Sync}
+import cats.effect.{ Async, Sync }
 import cats.syntax.all._
 
 import io.netty.util.concurrent.Future
@@ -27,20 +27,23 @@ private final class PartiallyApplied[F[_]] extends PartiallyAppliedPlatform[F] {
   def apply[A](ff: F[Future[A]])(implicit F: Async[F]): F[A] = {
     def inner(fut: Future[A], cancelable: Boolean): F[A] =
       Async[F].async[A] { cb =>
-        Sync[F] delay {
-          fut addListener { (fut: Future[A]) =>    // intentional shadowing
+        Sync[F].delay {
+          fut.addListener { (fut: Future[A]) => // intentional shadowing
             if (fut.isSuccess()) {
               cb(Right(fut.getNow()))
             } else {
               fut.cause() match {
-                case _: CancellationException if cancelable => ()   // swallow this one since it *probably* means we were canceled
+                case _: CancellationException if cancelable =>
+                  () // swallow this one since it *probably* means we were canceled
                 case t => cb(Left(t))
               }
             }
           }
 
           if (fut.isCancellable() && cancelable)
-            Some(Sync[F].delay(fut.cancel(false)) >> inner(fut, false).void)   // await the cancelation
+            Some(
+              Sync[F].delay(fut.cancel(false)) >> inner(fut, false).void,
+            ) // await the cancelation
           else
             None
         }

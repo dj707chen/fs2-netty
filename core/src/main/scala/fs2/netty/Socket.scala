@@ -17,11 +17,11 @@
 package fs2
 package netty
 
-import com.comcast.ip4s.{IpAddress, SocketAddress}
+import com.comcast.ip4s.{ IpAddress, SocketAddress }
 
 trait Socket[F[_]] {
 
-  def localAddress: F[SocketAddress[IpAddress]]
+  def localAddress:  F[SocketAddress[IpAddress]]
   def remoteAddress: F[SocketAddress[IpAddress]]
 
   def reads: Stream[F, Byte]
