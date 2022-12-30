@@ -169,7 +169,7 @@ object Network {
         classOf[ThreadFactory],
       )
       val result = constr.newInstance(
-        new Integer(1),
+        Integer.valueOf(1),
         new ThreadFactory {
           private val ctr = new AtomicInteger(0)
           def newThread(r: Runnable): Thread = {
@@ -195,9 +195,9 @@ object Network {
         val meth = eventLoopClazz.getDeclaredMethod("setIoRatio", classOf[Int])
         meth.invoke(
           server,
-          new Integer(90),
+          Integer.valueOf(90),
         ) // TODO tweak this a bit more; 100 was worse than 50 and 90 was a dramatic step up from both
-        meth.invoke(client, new Integer(90))
+        meth.invoke(client, Integer.valueOf(90))
       } catch {
         case _: Exception => ()
       }

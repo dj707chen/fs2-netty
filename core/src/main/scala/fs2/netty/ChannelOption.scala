@@ -40,20 +40,20 @@ object ChannelOption {
     apply(JChannelOption.ALLOCATOR, value)
 
   def allowHalfClosure(value: Boolean): ChannelOption =
-    apply(JChannelOption.ALLOW_HALF_CLOSURE, new JBoolean(value))
+    apply(JChannelOption.ALLOW_HALF_CLOSURE, JBoolean.valueOf(value))
 
   def autoClose(value: Boolean): ChannelOption =
-    apply(JChannelOption.AUTO_CLOSE, new JBoolean(value))
+    apply(JChannelOption.AUTO_CLOSE, JBoolean.valueOf(value))
 
   // we don't allow reconfiguring auto-read because it corrupts backpressure entirely
 
   def connectTimeoutMillis(value: Int): ChannelOption =
-    apply(JChannelOption.CONNECT_TIMEOUT_MILLIS, new Integer(value))
+    apply(JChannelOption.CONNECT_TIMEOUT_MILLIS, Integer.valueOf(value))
 
   // TODO multicast options
 
   def ipTos(value: Int): ChannelOption =
-    apply(JChannelOption.IP_TOS, new Integer(value))
+    apply(JChannelOption.IP_TOS, Integer.valueOf(value))
 
   def messageSizeEstimator(value: MessageSizeEstimator): ChannelOption =
     apply(JChannelOption.MESSAGE_SIZE_ESTIMATOR, value)
@@ -64,35 +64,35 @@ object ChannelOption {
   // TODO tune executor things?
 
   def backlog(value: Int): ChannelOption =
-    apply(JChannelOption.SO_BACKLOG, new Integer(value))
+    apply(JChannelOption.SO_BACKLOG, Integer.valueOf(value))
 
   def broadcast(value: Boolean): ChannelOption =
-    apply(JChannelOption.SO_BROADCAST, new JBoolean(value))
+    apply(JChannelOption.SO_BROADCAST, JBoolean.valueOf(value))
 
   def keepAlive(value: Boolean): ChannelOption =
-    apply(JChannelOption.SO_KEEPALIVE, new JBoolean(value))
+    apply(JChannelOption.SO_KEEPALIVE, JBoolean.valueOf(value))
 
   def linger(value: Int): ChannelOption =
-    apply(JChannelOption.SO_LINGER, new Integer(value))
+    apply(JChannelOption.SO_LINGER, Integer.valueOf(value))
 
   def receiveBuffer(value: Int): ChannelOption =
-    apply(JChannelOption.SO_RCVBUF, new Integer(value))
+    apply(JChannelOption.SO_RCVBUF, Integer.valueOf(value))
 
   def reuseAddress(value: Boolean): ChannelOption =
-    apply(JChannelOption.SO_REUSEADDR, new JBoolean(value))
+    apply(JChannelOption.SO_REUSEADDR, JBoolean.valueOf(value))
 
   def sendBuffer(value: Int): ChannelOption =
-    apply(JChannelOption.SO_SNDBUF, new Integer(value))
+    apply(JChannelOption.SO_SNDBUF, Integer.valueOf(value))
 
   def timeout(value: Int): ChannelOption =
-    apply(JChannelOption.SO_TIMEOUT, new Integer(value))
+    apply(JChannelOption.SO_TIMEOUT, Integer.valueOf(value))
 
   def noDelay(value: Boolean): ChannelOption =
-    apply(JChannelOption.TCP_NODELAY, new JBoolean(value))
+    apply(JChannelOption.TCP_NODELAY, JBoolean.valueOf(value))
 
   def writeBufferWaterMark(value: WriteBufferWaterMark): ChannelOption =
     apply(JChannelOption.WRITE_BUFFER_WATER_MARK, value)
 
   def writeSpinCount(value: Int): ChannelOption =
-    apply(JChannelOption.WRITE_SPIN_COUNT, new Integer(value))
+    apply(JChannelOption.WRITE_SPIN_COUNT, Integer.valueOf(value))
 }
