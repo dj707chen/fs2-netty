@@ -31,24 +31,29 @@ ThisBuild / githubWorkflowOSes ++= Seq("macos-latest", "windows-latest")
 
 val Fs2Version = "3.0.4"
 
-lazy val root = project.in(file("."))
+lazy val root = project
+  .in(file("."))
   .aggregate(core, benchmarks)
   .enablePlugins(NoPublishPlugin)
 
-lazy val core = project.in(file("core"))
+lazy val core = project
+  .in(file("core"))
   .settings(
     name := "fs2-netty",
     libraryDependencies ++= Seq(
-      "io.netty"     % "netty-all" % "4.1.69.Final",
-      "com.comcast" %% "ip4s-core" % "3.0.3",
-      "co.fs2"      %% "fs2-core"  % Fs2Version,
+      "io.netty"       % "netty-all"                  % "4.1.69.Final",
+      "com.comcast"   %% "ip4s-core"                  % "3.0.3",
+      "co.fs2"        %% "fs2-core"                   % Fs2Version,
+      "org.typelevel" %% "cats-effect-testing-specs2" % "1.3.0" % Test
+    )
+  )
 
-      "org.typelevel" %% "cats-effect-testing-specs2" % "1.3.0" % Test))
-
-lazy val benchmarks = project.in(file("benchmarks"))
+lazy val benchmarks = project
+  .in(file("benchmarks"))
   .dependsOn(core)
   .settings(
     libraryDependencies += "co.fs2" %% "fs2-io" % Fs2Version,
     // run / javaOptions += "-Dio.netty.leakDetection.level=paranoid",
-    run / fork := true)
+    run / fork := true
+  )
   .enablePlugins(NoPublishPlugin)
