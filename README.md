@@ -1,11 +1,20 @@
 # fs2-netty
 
-A very thin wrapper around Netty TCP sockets in terms of Cats Effect and fs2. This is designed to be a *mostly* drop-in replacement for `fs2.io.tcp`, which works directly against raw NIO. The advantages here (over raw NIO) are two-fold:
+A very thin wrapper around Netty TCP sockets in terms of Cats Effect and fs2.
+This is designed to be a *mostly* drop-in replacement for `fs2.io.tcp`,
+which works directly against raw NIO.
+
+The advantages here (over raw NIO) are two-fold:
 
 - Support for dramatically higher performance backends such as `epoll` and `io_uring`
-- Access to Netty's man-millenium of workarounds for bizarre async IO issues across various platforms and architectures
+- Access to Netty's man-millenium of workarounds for bizarre async IO issues across
+  various platforms and architectures
 
-The latter point is often overlooked, but it's very important to remember that NIO has an enormous number of very subtle bugs, even today. Additionally, the native asynchronous IO facilities on various operating systems *also* have a number of very subtle bugs, even down into the OS kernel layers. Netty very successfully works around all of this and has done so for over a decade. This isn't a wheel that needs to be reinvented.
+The latter point is often overlooked, but it's very important to remember that NIO has
+an enormous number of very subtle bugs, even today. Additionally, the native 
+asynchronous IO facilities on various operating systems *also* have a number of very 
+subtle bugs, even down into the OS kernel layers. Netty very successfully works around 
+all of this and has done so for over a decade. This isn't a wheel that needs to be reinvented.
 
 ## Usage
 
@@ -13,7 +22,8 @@ The latter point is often overlooked, but it's very important to remember that N
 libraryDependencies += "com.codecommit" %% "fs2-netty" % "<version>"
 ```
 
-**Not production ready; barely has unit tests; please be nice.** Published for Scala 2.13.4. Probably shouldn't be published at all
+**Not production ready; barely has unit tests; please be nice.**
+Published for Scala 2.13.4. Probably shouldn't be published at all
 
 ```scala
 import cats.effect.{IO, IOApp, ExitCode}
@@ -66,14 +76,20 @@ All of this is super-duper preliminary, okay? But with very minimal optimization
 
 ### Throughput
 
-A simple echo server, implemented relatively naively in each. The major difference is that the "raw Netty" implementation is doing things that are very unsafe in general (i.e. just passing the read buffer through to the write). You would lose a lot of that throughput if you had to actually use the data for anything other than echoing. So keeping in mind that the raw Netty implementation is effectively cheating, here you go:
+A simple echo server, implemented relatively naively in each.
+The major difference is that the "raw Netty" implementation is doing things that
+are very unsafe in general (i.e. just passing the read buffer through to the write).
+You would lose a lot of that throughput if you had to actually use the data for
+anything other than echoing. So keeping in mind that the raw Netty implementation
+is effectively cheating, here you go:
 
 |              | Raw Netty   | fs2-netty   | fs2-io     |
 |--------------|-------------|-------------|------------|
 | **Absolute** | 12,526 Mbps | 13,045 Mbps | 7,364 Mbps |
 | **Relative** | 1           | 1.04        | 0.59       |
 
-This was a 30 second test, echoing a long string of `x`s as fast as passible using `tcpkali`. 200 connections per second were established, up to a throttle of 500 concurrents. The relative numbers are more meaningful than the absolute numbers.
+This was a 30 second test, echoing a long string of `x`s as fast as passible using `tcpkali`.
+200 connections per second were established, up to a throttle of 500 concurrents. The relative numbers are more meaningful than the absolute numbers.
 
 ### Requests Per Second
 
