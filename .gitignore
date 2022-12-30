@@ -1,16 +1,17 @@
 target/
-
+.bsp/
+.idea/
 # vim
 *.sw?
+*.log
 
 # Ignore [ce]tags files
 tags
 
-/.bsp/
+# Metals
+.metals
+.bloop
+metals.sbt
+.vscode 
 
-# Intellij
-.idea
-*.iml
-
-# Mac OS
-META-INF/
+.DS_Store
