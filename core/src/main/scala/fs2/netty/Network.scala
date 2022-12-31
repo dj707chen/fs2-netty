@@ -44,7 +44,7 @@ final class Network[F[_]: Async] private (
   ): Resource[F, Socket[F]] =
     Dispatcher[F].flatMap { disp =>
       Resource.suspend {
-        Concurrent[F].deferred[Socket[F]].flatMap { d =>
+        Concurrent[F].deferred[Socket[F]].flatMap { deferredSocket =>
           addr.host.resolve[F].flatMap { resolved =>
             Sync[F].delay {
               val bootstrap = new Bootstrap
@@ -55,19 +55,20 @@ final class Network[F[_]: Async] private (
                   JChannelOption.AUTO_READ.asInstanceOf[JChannelOption[Any]],
                   false,
                 ) // backpressure
-                .handler(initializer(disp)(d.complete(_).void))
+                .handler(
+                  initializer(disp)(deferredSocket.complete(_).void)
+                )
 
               options.foreach(opt => bootstrap.option(opt.key, opt.value))
 
               val connectChannel = Sync[F].defer {
-                val cf =
-                  bootstrap.connect(resolved.toInetAddress, addr.port.value)
+                val cf = bootstrap.connect(resolved.toInetAddress, addr.port.value)
                 fromNettyFuture[F](cf.pure[F]).as(cf.channel())
               }
 
               Resource
-                .make(connectChannel <* d.get)(ch => fromNettyFuture(Sync[F].delay(ch.close())).void)
-                .evalMap(_ => d.get)
+                .make(connectChannel <* deferredSocket.get)(ch => fromNettyFuture(Sync[F].delay(ch.close())).void)
+                .evalMap(_ => deferredSocket.get)
             }
           }
         }
@@ -137,12 +138,13 @@ final class Network[F[_]: Async] private (
   )(result: Socket[F] => F[Unit]): ChannelInitializer[SocketChannel] =
     new ChannelInitializer[SocketChannel] {
       def initChannel(ch: SocketChannel) = {
-        val p = ch.pipeline()
+        val pl = ch.pipeline()
         ch.config().setAutoRead(false)
 
         disp.unsafeRunAndForget {
-          SocketHandler[F](disp, ch).flatMap { s =>
-            Sync[F].delay(p.addLast(s)) *> result(s)
+          SocketHandler[F](disp, ch).flatMap { sh =>
+            Sync[F].delay(pl.addLast(sh)) *>
+              result(sh)
           }
         }
       }
@@ -164,11 +166,11 @@ object Network {
   def apply[F[_]: Async]: Resource[F, Network[F]] = {
     // TODO configure threads
     def instantiate(name: String) = Sync[F].delay {
-      val constr = eventLoopClazz.getDeclaredConstructor(
+      val eventLoopConstr = eventLoopClazz.getDeclaredConstructor(
         classOf[Int],
         classOf[ThreadFactory],
       )
-      val result = constr.newInstance(
+      val eventLoop       = eventLoopConstr.newInstance(
         Integer.valueOf(1),
         new ThreadFactory {
           private val ctr = new AtomicInteger(0)
@@ -182,21 +184,21 @@ object Network {
         },
       )
 
-      result.asInstanceOf[EventLoopGroup]
+      eventLoop.asInstanceOf[EventLoopGroup]
     }
 
     def instantiateR(name: String) =
       Resource.make(instantiate(name)) { elg =>
-        fromNettyFuture[F](Sync[F].delay(elg.shutdownGracefully())).void
+        fromNettyFuture[F](
+          Sync[F].delay(elg.shutdownGracefully()),
+        ).void
       }
 
     (instantiateR("server"), instantiateR("client")).mapN { (server, client) =>
       try {
+        // TODO tweak this a bit more; 100 was worse than 50 and 90 was a dramatic step up from both
         val meth = eventLoopClazz.getDeclaredMethod("setIoRatio", classOf[Int])
-        meth.invoke(
-          server,
-          Integer.valueOf(90),
-        ) // TODO tweak this a bit more; 100 was worse than 50 and 90 was a dramatic step up from both
+        meth.invoke(server, Integer.valueOf(90))
         meth.invoke(client, Integer.valueOf(90))
       } catch {
         case _: Exception => ()
@@ -215,18 +217,11 @@ object Network {
           .getOrElse(false)
       ) {
         Class.forName("io.netty.incubator.channel.uring.IOUringEventLoop")
-
         Some(
           (
-            Class.forName(
-              "io.netty.incubator.channel.uring.IOUringEventLoopGroup",
-            ),
-            Class.forName(
-              "io.netty.incubator.channel.uring.IOUringServerSocketChannel",
-            ),
-            Class.forName(
-              "io.netty.incubator.channel.uring.IOUringSocketChannel",
-            ),
+            Class.forName("io.netty.incubator.channel.uring.IOUringEventLoopGroup"),
+            Class.forName("io.netty.incubator.channel.uring.IOUringServerSocketChannel"),
+            Class.forName("io.netty.incubator.channel.uring.IOUringSocketChannel"),
           ),
         )
       } else {
